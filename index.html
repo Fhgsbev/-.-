@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title></title>
+</head>
+
+<body>
+  
+</body>
+
+</html>
+
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8">
+<title>AI Chat عاطفي بالإيموجيز</title>
+
+<style>
+body { background: linear-gradient(135deg, #0f172a, #1e293b); color: white; font-family: Arial; text-align: center; }
+#chat { width: 90%; max-width: 450px; height: 500px; background: #020617; margin: 20px auto; padding: 10px; overflow-y: auto; border-radius: 15px; }
+.message { margin: 8px; padding: 12px; border-radius: 12px; max-width: 80%; animation: slideUp 0.4s ease; line-height: 1.5; }
+.user { background: #38bdf8; margin-left: auto; }
+.bot { background: #22c55e; margin-right: auto; }
+input { width: 65%; padding: 10px; border-radius: 20px; border: none; }
+button { padding: 10px; border-radius: 20px; border: none; background: #6366f1; color: white; cursor: pointer; }
+button:hover { transform: scale(1.1); }
+@keyframes slideUp { from {opacity: 0; transform: translateY(20px);} to {opacity: 1; transform: translateY(0);} }
+</style>
+</head>
+<body>
+
+<h2>MARO🔥AI</h2>
+
+<div id="chat"></div>
+
+<input id="input" placeholder="اكتب سؤالك؟">
+<button onclick="send()">إرسال</button>
+
+<script>
+
+// 🌟 قاعدة بيانات أسئلة شائعة مع مشاعر وإيموجيز
+let defaultBrain = [
+  {keywords: ["اسمك", "مين انت"], response: "أنا مساعد ذكي 🤖✨ تم تصميمي لأسمعك وأساعدك وأرد على أسئلتك بحب واهتمام ❤️🥰."},
+  {keywords: ["ازيك", "اخبارك"], response: "أنا تمام الحمدلله 😄🎉، سعيد إنك سألت عني. وانت عامل إيه اليوم؟ 🌞"},
+  {keywords: ["بتعمل ايه", "وظيفتك"], response: "وظيفتي هي أكون صديقك هنا، أساعدك وأرد على كل أسئلتك 🧠💡. أحب دايماً أقدم لك معلومات واضحة ومفيدة، وكمان أحسسك بالدعم 💚."},
+  {keywords: ["امتحان", "مذاكرة"], response: "أفهم شعور القلق قبل الامتحان 😟📚. حاول تنظم وقتك وخد راحة بين المذاكرة، وركز على أهم النقاط. أنا واثق إنك هتعمل ممتاز 💪✨"},
+  {keywords: ["ازاي اتعلم برمجة", "اتعلم كود"], response: "ابدأ بالأساسيات زي HTML و CSS و JavaScript 👨‍💻💻، ومع كل خطوة هتحس بالسعادة لما تشوف مشروعك يكبر 😃🎉. الصبر والممارسة هيديك إحساس بالإنجاز ✨."},
+  {keywords: ["فلوس", "اكسب فلوس"], response: "أعرف شعور الرغبة في كسب المال 💰🔥. ركز على مهاراتك وحاول تبدأ بمشاريع صغيرة على الإنترنت 💻🖌️، ومع الوقت هتحس بالفخر لما تشوف مجهودك يثمر 💪💎."},
+  {keywords: ["gta", "العاب"], response: "GTA ممتعة ومليانة مغامرة 😎🎮. اللعب ممكن يكون ممتع لكنه محتاج وقت وصبر لتستمتع بكل تفاصيل اللعبة ⏳🕹️."},
+  {keywords: ["حب", "عشق"], response: "الحب شعور جميل ❤️🥰💌، مهم نقدر نعبّر عنه ونحافظ على الناس اللي بنحبهم، والسعادة بتيجي من الاهتمام والمشاركة مع الآخرين 🌹✨."},
+  {keywords: ["حزين", "زعل"], response: "أعرف شعور الحزن 😔💔. مهم تاخد وقتك وتعبر عن مشاعرك، وحاول تعمل حاجة تحسسك بالراحة والسعادة مجددًا 🌈🌟."},
+  {keywords: ["فرح", "سعيد"], response: "مبسوط جدًا لسماع أخبار سعادتك 😄🎉🌞! حاول تشارك فرحتك مع الناس اللي بتحبهم هتحس بزيادة الإحساس بالسرور 💖✨."}
+];
+
+// 🌟 تحميل brain من LocalStorage أو استخدام default
+let brain = JSON.parse(localStorage.getItem("aiBrain")) || defaultBrain;
+
+// 🌟 تنظيف الكلام
+function cleanText(text) { return text.toLowerCase().replace(/[^\u0600-\u06FFa-z0-9 ]/g, ""); }
+
+// 🌟 حساب التشابه
+function similarity(input, keywords) {
+  let score = 0;
+  for (let word of keywords) {
+    if (input.includes(word)) score += 2;
+    let inputWords = input.split(" ");
+    let keyWords = word.split(" ");
+    for (let w1 of inputWords) for (let w2 of keyWords) if (w1 === w2) score += 1;
+  }
+  return score;
+}
+
+// 🌟 الحصول على الرد
+function getReply(input) {
+  input = cleanText(input);
+  let bestScore = 0;
+  let bestReply = null;
+  for (let item of brain) {
+    let score = similarity(input, item.keywords);
+    if (score > bestScore) {
+      bestScore = score;
+      bestReply = item.response;
+    }
+  }
+  if (bestScore >= 2) return bestReply;
+  return null;
+}
+
+// 🌟 إضافة رسالة للشات
+function addMessage(text, type) {
+  let chat = document.getElementById("chat");
+  let msg = document.createElement("div");
+  msg.classList.add("message", type);
+  msg.innerText = text;
+  chat.appendChild(msg);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// 🌟 إرسال الرسالة
+function send() {
+  let input = document.getElementById("input").value.trim();
+  if (!input) return;
+  addMessage(input, "user");
+  let reply = getReply(input);
+
+  if (reply) {
+    setTimeout(() => addMessage(reply, "bot"), 400);
+  } else {
+    setTimeout(() => {
+      addMessage("مش فاهم السؤال 🤔 ممكن تكتبلي الإجابة بطريقة مفصلة مع إحساسها 😌💡؟", "bot");
+      learnNew(input);
+    }, 400);
+  }
+  document.getElementById("input").value = "";
+}
+
+// 🌟 تخزين أسئلة جديدة مع حفظ دائم
+function learnNew(question) {
+  let chat = document.getElementById("chat");
+  let inputReply = document.createElement("input");
+  inputReply.placeholder = "اكتب الرد الجديد هنا مع إيموجيز 😊...";
+  inputReply.style.width = "60%";
+  inputReply.style.marginTop = "10px";
+
+  let btnSave = document.createElement("button");
+  btnSave.innerText = "حفظ الرد";
+  btnSave.onclick = function() {
+    let answer = inputReply.value.trim();
+    if (answer) {
+      brain.push({keywords: [question], response: answer});
+      localStorage.setItem("aiBrain", JSON.stringify(brain));
+      addMessage("تمام 😎 اتعلمت الرد الجديد مع الإحساس والإيموجيز! هقدر أستخدمه المرات الجاية ❤️✨", "bot");
+      chat.removeChild(inputReply);
+      chat.removeChild(btnSave);
+    }
+  };
+
+  chat.appendChild(inputReply);
+  chat.appendChild(btnSave);
+  chat.scrollTop = chat.scrollHeight;
+}
+</script>
+
+</body>
+</html>
